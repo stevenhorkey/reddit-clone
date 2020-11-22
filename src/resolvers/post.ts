@@ -1,15 +1,17 @@
 import { Resolver, Query, Ctx, Int, Arg, Mutation } from 'type-graphql';
 import { Post } from '../entities/Post';
-// import { emit } from 'process';
 import { MyContext } from 'src/types';
 
 @Resolver()
 export class PostResolver {
+
+    // get all posts
     @Query(() => [Post])
     posts(@Ctx() {em}: MyContext): Promise<Post[]> {
         return em.find(Post, {});
     }
 
+    // get post
     @Query(() => Post, {nullable: true} )
     post(
         @Arg('id', () => Int) id: number,
@@ -18,6 +20,7 @@ export class PostResolver {
         return em.findOne(Post, { id });
     }
 
+    // create post
     @Mutation(() => Post )
     async createPost(
         @Arg('title', () => String) title: string,
@@ -28,6 +31,7 @@ export class PostResolver {
         return post;
     }
 
+    // update post
     @Mutation(() => Post, {nullable: true})
     async updatePost(
         @Arg('id', () => Int) id: number,
@@ -43,6 +47,7 @@ export class PostResolver {
         return post;
     }
 
+    // delete post
     @Mutation(() => Boolean)
     async deletePost(
         @Arg('id', () => Int) id: number,
@@ -51,4 +56,5 @@ export class PostResolver {
         await em.nativeDelete(Post, {id});
         return true;
     }
+
 }
