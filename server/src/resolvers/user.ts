@@ -2,6 +2,7 @@ import { Resolver, Ctx, Arg, Mutation, Field, ObjectType, Query } from 'type-gra
 import { User } from '../entities/User';
 import { MyContext } from 'src/types';
 import argon2 from "argon2";
+import {EntityManager} from '@mikro-orm/postgresql';
 
 
 @ObjectType()
@@ -45,7 +46,7 @@ export class UserResolver {
     async register(
         @Arg('username', () => String) username: string,
         @Arg('password', () => String) password: string,
-        @Ctx() {em}: MyContext
+        @Ctx() {em, req}: MyContext
     ): Promise<UserResponse> {
         // validate username
         if(username.length <= 6) {
@@ -66,18 +67,20 @@ export class UserResolver {
             }
         }
         const hashedPassword = await argon2.hash(password);
-        const user = em.create(User, {
-            username: username.toLowerCase(),
-            password: hashedPassword
-        });
-
+        let user;
         try {
-            await em.persistAndFlush(user);
+            const result = await (em as EntityManager).createQueryBuilder(User).getKnexQuery().insert({
+                username: username.toLowerCase(),
+                password: hashedPassword,
+                created_at: new Date(),
+                updated_at: new Date()
+            }).returning("*");
+            user = result[0];
         } catch (err) {
-            if (err.code === "23505" || err.detail.includes("already exists")) {
+            if (err.detail.includes("already exists")) {
                 return {
                     errors: [{
-                        field: "password",
+                        field: "username",
                         message: "username is already in use"
                     }]
                 };
