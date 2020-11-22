@@ -1,4 +1,4 @@
-import { Resolver, Ctx, Arg, Mutation, Field, ObjectType } from 'type-graphql';
+import { Resolver, Ctx, Arg, Mutation, Field, ObjectType, Query } from 'type-graphql';
 import { User } from '../entities/User';
 import { MyContext } from 'src/types';
 import argon2 from "argon2";
@@ -23,6 +23,22 @@ class UserResponse{
 
 @Resolver()
 export class UserResolver {
+
+    @Query(() => User, {nullable: true})
+    async me(
+        @Ctx() {req, em}: MyContext
+    ) {
+        // @ts-ignore
+        if(!req.session.userId){
+            return null;
+        }
+        const user = await em.findOne(User, {
+            // @ts-ignore
+            id: req.session.userId
+        });
+        return user;
+
+    }
 
     // register user
     @Mutation(() => UserResponse )
@@ -67,6 +83,10 @@ export class UserResolver {
                 };
             }
         }
+
+        // store user id session to keep user logged in with cookie
+        // @ts-ignore
+        req.session.userId = user.id;
         
         return {user};
     }
@@ -76,7 +96,7 @@ export class UserResolver {
     async login(
         @Arg('username', () => String) username: string,
         @Arg('password', () => String) password: string,
-        @Ctx() {em}: MyContext
+        @Ctx() {em, req}: MyContext
     ): Promise<UserResponse> {
        
         const user = await em.findOne(User, {
@@ -102,6 +122,9 @@ export class UserResolver {
                 }]
             };
         }
+
+        // @ts-ignore
+        req.session.userId = user.id;
 
         return {
             user
