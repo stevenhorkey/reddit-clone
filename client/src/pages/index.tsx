@@ -13,9 +13,13 @@ import { Main } from '../components/Main'
 import { DarkModeSwitch } from '../components/DarkModeSwitch'
 import { CTA } from '../components/CTA'
 import { Footer } from '../components/Footer'
+import Navbar from '../components/Navbar'
 
 const Index = () => (
+  <div>
+  <Navbar />
   <div>Hello world</div>
+  </div>
 )
 
 export default Index
